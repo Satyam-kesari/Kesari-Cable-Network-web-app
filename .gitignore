@@ -1,0 +1,20 @@
+node_modules/
+dist/
+data/
+backups/
+.env
+*.log
+.DS_Store
+test-results/
+
+# Private source exports and local connection files
+/Summary.csv
+/Payment.csv
+/Recharge.csv
+.env.*
+!.env.example
+*.crt
+*.cer
+*.pem
+*.key
+*.sqlite*

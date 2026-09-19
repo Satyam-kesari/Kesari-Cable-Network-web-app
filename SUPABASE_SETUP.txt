@@ -1,0 +1,86 @@
+KESARI CABLE NETWORK — SUPABASE SETUP
+
+Current state
+-------------
+The SQLite data has been migrated into Supabase's private kesari schema.
+The application is configured with DB_CLIENT=postgres. Keep the existing
+DATABASE_URL and PGSSLROOTCERT settings in .env. Credentials stay server-only.
+The local SQLite database and pre-migration backup are retained as historical
+copies; new writes go to PostgreSQL. Do not re-import the old SQLite file.
+Select the kesari schema in Supabase's Table Editor to see the app tables.
+
+The instructions below are a reference for configuring another computer
+or a new project. They are not steps to repeat on the migrated database.
+
+What to do in Supabase
+---------------------
+1. Create a Supabase project (a new, empty project is simplest).
+2. Save the DATABASE password chosen when creating the project.
+   This is not your Supabase account login password or an API key.
+3. Open the project and click Connect.
+4. Select the Session pooler connection, URI format, port 5432.
+   This supports IPv4. Use the exact host and username shown by Supabase;
+   do not guess the pooler index, region, or project reference.
+5. Copy the connection URI into DATABASE_URL in the local .env file.
+6. Replace the URI's password placeholder with your database password.
+   URL-encode special characters inside the password, for example:
+     @ -> %40   # -> %23   : -> %3A   / -> %2F   % -> %25
+   Encode only the password, not the entire URL. Do not use an online
+   password-encoding website. If needed, I can configure separate
+   connection fields instead so you can enter the password verbatim.
+7. Keep sslmode=verify-full in the URI (use & instead of ? if the URI
+   already has query parameters). If a Supabase root certificate is
+   needed, download it from Database settings and set PGSSLROOTCERT
+   to its absolute local path. Do not disable certificate verification.
+8. Save .env and tell me it is ready. Do not paste the password in chat.
+
+Dummy values to replace
+----------------------
+DATABASE_URL="postgresql://postgres.REPLACE_PROJECT_REF:REPLACE_URL_ENCODED_DATABASE_PASSWORD@REPLACE_SESSION_POOLER_HOST:5432/postgres?sslmode=verify-full"
+
+REPLACE_PROJECT_REF
+  Your project reference, as included in the dashboard's pooler username.
+
+REPLACE_URL_ENCODED_DATABASE_PASSWORD
+  Your database password, URL-encoded when needed.
+
+REPLACE_SESSION_POOLER_HOST
+  Exact host from Connect > Session pooler, usually shaped like:
+  aws-0-REGION.pooler.supabase.com
+  The actual index and region may differ. Copy, do not guess.
+
+Prefer replacing the entire DATABASE_URL value with your actual URI.
+Leave PORT=5191, HOST=127.0.0.1, VITE_PORT=5190 and VITE_API_PORT=5191 alone.
+The remote database's port 5432 does not open a local app listener.
+
+What is NOT needed
+------------------
+No Supabase anon/publishable key, service-role key, account password,
+or personal access token is needed for this direct PostgreSQL migration.
+Do not put database credentials in a VITE_ variable: those are client-visible.
+Do not put real secrets in .env.example or in this TXT guide.
+
+Migration sequence once credentials are ready
+--------------------------------------------
+1. Verify the target project, connection, permissions and existing tables.
+   An existing target must be inspected before importing; do not overwrite
+   unrelated tables or records.
+2. Briefly pause edits and create a consistent SQLite backup.
+3. Use the existing verified migration script to create app-owned tables
+   in a dedicated schema outside Supabase's exposed public API schema.
+   React continues talking to Express; it never receives database secrets.
+4. Copy ALL current SQLite records: customers, payments, recharges,
+   and import metadata. Use SQLite, not the original CSVs, so later edits
+   are included. Preserve IDs, source order, leading-zero card numbers,
+   phone strings, nullable values, integer paise, dates and timestamps.
+   Preserve duplicate and unresolved historical references for review.
+5. Validate table counts, record values and payment totals against SQLite.
+   The initial import had 380 customers, 56 payments and 6,628 recharges;
+   compare against the live SQLite counts at migration time.
+6. Switch Express reads/writes to PostgreSQL and test CRUD, date summaries,
+   Recharge Ending Soon, search, exports and backups against the new store.
+7. Retain the SQLite backup for rollback. Do not delete it after migration.
+
+Connection reference
+--------------------
+https://supabase.com/docs/guides/database/connecting-to-postgres
